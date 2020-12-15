@@ -1,0 +1,48 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"log"
+	"net/http"
+)
+
+func main() {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(
+			w,
+			`
+#include "index.html"
+			`,
+		)
+	})
+
+	http.HandleFunc("/0", func(w http.ResponseWriter, r *http.Request) {
+		go http.Get(fmt.Sprintf("http://%s/1", os.Getenv("HOST_A")))
+		go http.Get(fmt.Sprintf("http://%s/1", os.Getenv("HOST_B")))
+		http.Redirect(w, r, "/", 307)
+	})
+
+	http.HandleFunc("/1", func(w http.ResponseWriter, r *http.Request) {
+		go http.Get(fmt.Sprintf("http://%s/1", os.Getenv("HOST_A")))
+		go http.Get(fmt.Sprintf("http://%s/", os.Getenv("HOST_B")))
+		http.Redirect(w, r, "/", 307)
+	})
+
+	http.HandleFunc("/2", func(w http.ResponseWriter, r *http.Request) {
+		go http.Get(fmt.Sprintf("http://%s/", os.Getenv("HOST_A")))
+		go http.Get(fmt.Sprintf("http://%s/1", os.Getenv("HOST_B")))
+		http.Redirect(w, r, "/", 307)
+	})
+
+	http.HandleFunc("/3", func(w http.ResponseWriter, r *http.Request) {
+		go http.Get(fmt.Sprintf("http://%s/", os.Getenv("HOST_A")))
+		go http.Get(fmt.Sprintf("http://%s/", os.Getenv("HOST_B")))
+		http.Redirect(w, r, "/", 307)
+	})
+
+	log.Fatal(http.ListenAndServe(os.Getenv("LISTEN"), nil))
+}
+
+// vim: syntax=go
+
